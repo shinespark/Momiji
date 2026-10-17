@@ -5,7 +5,7 @@ public enum RomajiTableImportError: Error, Equatable, Sendable {
 
 public enum RomajiTableImporter {
     public static func convert(googleTSV: String) throws(RomajiTableImportError) -> String {
-        var rows: [String] = []
+        var rules: [(input: Substring, output: String, waitsForNext: Bool)] = []
         for (offset, rawLine) in googleTSV.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
             let line = rawLine.hasSuffix("\r") ? rawLine.dropLast() : rawLine
             if line.allSatisfy(\.isWhitespace) {
@@ -14,15 +14,27 @@ public enum RomajiTableImporter {
             let columns = line.split(separator: "\t", omittingEmptySubsequences: false)
             switch columns.count {
             case 2:
-                rows.append("\(escape(columns[0]))\t\(escape(columns[1]))")
+                rules.append((columns[0], escape(columns[1]), false))
             case 3:
-                rows.append("\(escape(columns[0]))\t\(escape(columns[1]))\(escape(columns[2]))")
+                rules.append((columns[0], escape(columns[1]) + escape(columns[2]), true))
             default:
                 throw .invalidLine(lineNumber: offset + 1)
             }
         }
-        if rows.isEmpty {
+        if rules.isEmpty {
             throw .empty
+        }
+        let inputs = rules.map(\.input)
+        var rows: [String] = []
+        for rule in rules {
+            let input = escape(rule.input)
+            let isPrefixOfAnother = !rule.waitsForNext && inputs.contains { $0.count > rule.input.count && $0.hasPrefix(rule.input) }
+            if isPrefixOfAnother {
+                rows.append("\(input){any character}\t\(rule.output){any character}")
+                rows.append("\(input){composition-separator}\t\(rule.output)")
+            } else {
+                rows.append("\(input)\t\(rule.output)")
+            }
         }
         return rows.joined(separator: "\n")
     }

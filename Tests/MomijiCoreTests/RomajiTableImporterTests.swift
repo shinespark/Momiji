@@ -38,3 +38,8 @@ import Testing
     #expect(lines.contains(";h\t←"))
     #expect(!lines.contains { $0.split(separator: "\t", omittingEmptySubsequences: false).count != 2 })
 }
+
+@Test func prefixRowWaitsForNextInput() throws {
+    let lines = try RomajiTableImporter.convert(googleTSV: "n\tん\nna\tな").split(separator: "\n")
+    #expect(lines == ["n{any character}\tん{any character}", "n{composition-separator}\tん", "na\tな"])
+}
