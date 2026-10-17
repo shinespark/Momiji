@@ -88,6 +88,11 @@ public final class InputSession {
     }
 
     private func handleConverting(_ input: KeyInput) -> HandleResult {
+        if let current = conversion, current.windowVisible, input.modifiers.isEmpty,
+           case .character(let character) = input.key,
+           let index = SelectionKeys.index(of: character, layout: options.selectionKeyLayout) {
+            return selectOnPage(index, in: current)
+        }
         if let character = insertableCharacter(input) {
             let committed = commitConversion()
             backend.insert(String(character))
@@ -111,6 +116,10 @@ public final class InputSession {
             }
         case .prevCandidate:
             moveSelection(by: -1)
+        case .nextPage:
+            movePage(by: 1)
+        case .prevPage:
+            movePage(by: -1)
         case .segmentShrink, .segmentFocusLeft:
             resizeSegment(by: -1)
         case .segmentExpand, .segmentFocusRight:
@@ -152,6 +161,26 @@ public final class InputSession {
         guard var current = conversion, !current.candidates.isEmpty else { return }
         current.override = nil
         current.selected = (current.selected + offset + current.candidates.count) % current.candidates.count
+        conversion = current
+    }
+
+    private func selectOnPage(_ index: Int, in current: Conversion) -> HandleResult {
+        let target = current.selected / Self.pageSize * Self.pageSize + index
+        guard current.candidates.indices.contains(target) else {
+            return .consumed
+        }
+        conversion?.selected = target
+        conversion?.override = nil
+        return HandleResult(handled: true, commitText: commitConversion())
+    }
+
+    private func movePage(by offset: Int) {
+        guard var current = conversion, !current.candidates.isEmpty else { return }
+        let pageCount = (current.candidates.count + Self.pageSize - 1) / Self.pageSize
+        let page = (current.selected / Self.pageSize + offset + pageCount) % pageCount
+        current.selected = page * Self.pageSize
+        current.windowVisible = true
+        current.override = nil
         conversion = current
     }
 

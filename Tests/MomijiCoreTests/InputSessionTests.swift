@@ -99,3 +99,77 @@ let kanjiDictionary = [
     #expect(press(.space, into: session).handled == false)
     #expect(press(.enter, into: session).handled == false)
 }
+
+let koukaDictionary = ["こうか": ["効果", "硬貨", "高価"]]
+let manyDictionary = ["こうか": (0..<25).map { "候補\($0)" }]
+
+func openWindow(_ dictionary: [String: [String]], layout: SelectionKeyLayout = .dvorak) -> InputSession {
+    let (session, _) = makeSession(dictionary, layout: layout)
+    type("こうか", into: session)
+    press(.space, into: session)
+    press(.space, into: session)
+    return session
+}
+
+@Test func dvorakHomeKeyCommits() {
+    let session = openWindow(koukaDictionary)
+    #expect(type("e", into: session).last?.commitText == "高価")
+    #expect(session.state.marked.isEmpty)
+}
+
+@Test func digitCommits() {
+    let session = openWindow(koukaDictionary)
+    #expect(type("3", into: session).last?.commitText == "高価")
+}
+
+@Test func qwertyLayout() {
+    let session = openWindow(koukaDictionary, layout: .qwerty)
+    #expect(session.state.candidateWindow?.labels == ["a", "s", "d"])
+    #expect(type("d", into: session).last?.commitText == "高価")
+}
+
+@Test func secondPageSelection() {
+    let session = openWindow(manyDictionary)
+    press(.pageDown, into: session)
+    #expect(session.state.candidateWindow?.page == 2)
+    #expect(type("a", into: session).last?.commitText == "候補10")
+}
+
+@Test func outOfRangeKeyIgnored() {
+    let session = openWindow(koukaDictionary)
+    let result = type("s", into: session).last
+    #expect(result == HandleResult(handled: true, commitText: nil))
+    #expect(session.state.candidateWindow != nil)
+}
+
+@Test func otherLetterCommitsThenTypes() {
+    let session = openWindow(koukaDictionary)
+    #expect(type("f", into: session).last?.commitText == "硬貨")
+    #expect(session.state.marked == [MarkedSegment(text: "f", isFocused: false)])
+}
+
+@Test func pageIndicator() {
+    let session = openWindow(manyDictionary)
+    #expect(session.state.candidateWindow?.pageCount == 3)
+}
+
+@Test func spaceMovesAcrossPages() {
+    let session = openWindow(manyDictionary)
+    for _ in 0..<9 { press(.space, into: session) }
+    #expect(session.state.candidateWindow?.page == 2)
+    #expect(session.state.candidateWindow?.selectedIndex == 0)
+}
+
+@Test func homeKeysTypeWhenNoWindow() {
+    let (session, _) = makeSession(koukaDictionary)
+    type("こうか", into: session)
+    press(.space, into: session)
+    #expect(type("a", into: session).last?.commitText == "効果")
+    #expect(session.state.marked == [MarkedSegment(text: "a", isFocused: false)])
+}
+
+@Test func layoutChangeAppliesImmediately() {
+    let session = openWindow(koukaDictionary)
+    session.options.selectionKeyLayout = .qwerty
+    #expect(type("d", into: session).last?.commitText == "高価")
+}
