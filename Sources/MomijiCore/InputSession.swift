@@ -11,6 +11,7 @@ public final class InputSession {
     public var options: SessionOptions
     public private(set) var state = SessionState()
     private var conversion: Conversion?
+    private var suggestions: [String] = []
 
     public static let pageSize = 10
 
@@ -21,6 +22,7 @@ public final class InputSession {
 
     public func handle(_ input: KeyInput) -> HandleResult {
         let result = conversion == nil ? handleComposing(input) : handleConverting(input)
+        updateSuggestions()
         refreshState()
         return result
     }
@@ -52,12 +54,18 @@ public final class InputSession {
         guard !backend.reading.isEmpty else {
             return .ignored
         }
+        if input.key == .down, input.modifiers.isEmpty, !suggestions.isEmpty {
+            startPrediction()
+            return .consumed
+        }
         guard let action = Keymap.action(for: input, mode: .composition) else {
             return input.modifiers.contains(.command) ? .ignored : .consumed
         }
         switch action {
         case .convert:
             startConversion()
+        case .predict:
+            startPrediction()
         case .commit:
             return HandleResult(handled: true, commitText: commitComposition())
         case .cancel:
@@ -136,6 +144,21 @@ public final class InputSession {
         backend.prepareForConversion()
         backend.moveCursorToEnd()
         conversion = Conversion(candidates: segmentCandidates(), segmentLength: backend.cursor)
+    }
+
+    private func startPrediction() {
+        let predictions = backend.predictions(useZenzai: true)
+        guard !predictions.isEmpty else { return }
+        backend.moveCursorToEnd()
+        conversion = Conversion(candidates: predictions, windowVisible: true, segmentLength: backend.reading.count)
+    }
+
+    private func updateSuggestions() {
+        guard options.suggestionEnabled, conversion == nil, !backend.reading.isEmpty else {
+            suggestions = []
+            return
+        }
+        suggestions = backend.predictions(useZenzai: false).prefix(5).map(\.text)
     }
 
     private func segmentCandidates() -> [ConversionCandidate] {
@@ -248,6 +271,7 @@ public final class InputSession {
         } else if !backend.reading.isEmpty {
             next.marked = [MarkedSegment(text: backend.reading, isFocused: false)]
             next.cursor = backend.cursor
+            next.suggestions = suggestions
         }
         state = next
     }

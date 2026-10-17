@@ -173,3 +173,53 @@ func openWindow(_ dictionary: [String: [String]], layout: SelectionKeyLayout = .
     session.options.selectionKeyLayout = .qwerty
     #expect(type("d", into: session).last?.commitText == "高価")
 }
+
+func suggestingSession(enabled: Bool = true) -> InputSession {
+    let backend = FakeBackend()
+    backend.predictionTexts = ["ありがとう", "ありがとうございます"]
+    let session = InputSession(backend: backend, options: .init(selectionKeyLayout: .dvorak, suggestionEnabled: enabled))
+    type("ありが", into: session)
+    return session
+}
+
+@Test func suggestionsWhileTyping() {
+    #expect(suggestingSession().state.suggestions == ["ありがとう", "ありがとうございます"])
+}
+
+@Test func suggestionsDisabled() {
+    #expect(suggestingSession(enabled: false).state.suggestions.isEmpty)
+}
+
+@Test func tabOpensPredictionWindow() {
+    let session = suggestingSession(enabled: false)
+    press(.tab, into: session)
+    #expect(session.state.candidateWindow?.candidates == ["ありがとう", "ありがとうございます"])
+    #expect(session.state.suggestions.isEmpty)
+}
+
+@Test func downFromSuggestionOpensWindow() {
+    let session = suggestingSession()
+    press(.down, into: session)
+    #expect(session.state.candidateWindow?.candidates == ["ありがとう", "ありがとうございます"])
+}
+
+@Test func homeKeyCommitsPrediction() {
+    let session = suggestingSession()
+    press(.tab, into: session)
+    #expect(type("o", into: session).last?.commitText == "ありがとうございます")
+    #expect(session.state.marked.isEmpty)
+}
+
+@Test func homeKeyTypesDuringSuggestion() {
+    let session = suggestingSession()
+    let result = type("a", into: session).last
+    #expect(result?.commitText == nil)
+    #expect(session.state.marked == [MarkedSegment(text: "ありがa", isFocused: false)])
+}
+
+@Test func downWithoutSuggestionDoesNothing() {
+    let (session, _) = makeSession()
+    type("ありが", into: session)
+    press(.down, into: session)
+    #expect(session.state.candidateWindow == nil)
+}

@@ -73,4 +73,12 @@ private func backend(table: String?) -> AzooKeyBackend {
         b.prepareForConversion()
         #expect(b.reading == "かん")
     }
+
+    @Test func committingPredictionConsumesReading() throws {
+        let b = backend(table: nil)
+        b.insert("arigat")
+        let prediction = try #require(b.predictions(useZenzai: false).first { $0.text.hasPrefix("ありがとう") })
+        b.commit(prediction)
+        #expect(b.reading.isEmpty)
+    }
 }
