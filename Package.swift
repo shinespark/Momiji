@@ -29,6 +29,11 @@ let package = Package(
             dependencies: ["MomijiCore", "MomijiConverter"],
             swiftSettings: [.interoperabilityMode(.Cxx)]
         ),
+        .executableTarget(
+            name: "Momiji",
+            dependencies: ["MomijiCore", "MomijiConverter"],
+            swiftSettings: [.interoperabilityMode(.Cxx), .swiftLanguageMode(.v5)]
+        ),
         .testTarget(
             name: "MomijiCoreTests",
             dependencies: ["MomijiCore"],
