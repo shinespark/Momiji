@@ -34,6 +34,16 @@ final class MomijiInputController: IMKInputController {
         super.deactivateServer(sender)
     }
 
+    override func menu() -> NSMenu! {
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "設定…", action: #selector(showSettings(_:)), keyEquivalent: ""))
+        return menu
+    }
+
+    @objc private func showSettings(_ sender: Any?) {
+        SettingsWindow.show()
+    }
+
     func currentCaretRect() -> NSRect {
         var rect = NSRect.zero
         _ = currentClient?.attributes(forCharacterIndex: 0, lineHeightRectangle: &rect)
