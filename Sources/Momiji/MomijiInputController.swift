@@ -40,7 +40,14 @@ final class MomijiInputController: IMKInputController {
         return rect
     }
 
-    func sessionStateDidChange(_ state: SessionState) {}
+    private static let candidatePanel = CandidatePanel()
+    private static let suggestionPanel = SuggestionPanel()
+
+    func sessionStateDidChange(_ state: SessionState) {
+        let caret = currentCaretRect()
+        Self.candidatePanel.update(state.candidateWindow, caret: caret)
+        Self.suggestionPanel.update(state.candidateWindow == nil ? state.suggestions : [], caret: caret)
+    }
 
     private func render(client: any IMKTextInput & NSObjectProtocol) {
         let state = engine.session.state
