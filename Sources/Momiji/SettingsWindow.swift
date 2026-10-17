@@ -91,6 +91,7 @@ enum SettingsWindow {
             newWindow.title = "Momiji 設定"
             newWindow.styleMask = [.titled, .closable]
             newWindow.isReleasedWhenClosed = false
+            newWindow.setContentSize(hosting.view.fittingSize)
             window = newWindow
         }
         NSApp.activate(ignoringOtherApps: true)
