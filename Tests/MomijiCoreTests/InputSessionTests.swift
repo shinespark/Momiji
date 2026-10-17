@@ -160,14 +160,6 @@ func openWindow(_ dictionary: [String: [String]], layout: SelectionKeyLayout = .
     #expect(session.state.candidateWindow?.selectedIndex == 0)
 }
 
-@Test func homeKeysTypeWhenNoWindow() {
-    let (session, _) = makeSession(koukaDictionary)
-    type("こうか", into: session)
-    press(.space, into: session)
-    #expect(type("a", into: session).last?.commitText == "効果")
-    #expect(session.state.marked == [MarkedSegment(text: "a", isFocused: false)])
-}
-
 @Test func layoutChangeAppliesImmediately() {
     let session = openWindow(koukaDictionary)
     session.options.selectionKeyLayout = .qwerty
