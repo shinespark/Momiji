@@ -40,6 +40,10 @@ import Testing
 }
 
 @Test func prefixRowWaitsForNextInput() throws {
-    let lines = try RomajiTableImporter.convert(googleTSV: "n\tん\nna\tな").split(separator: "\n")
-    #expect(lines == ["n{any character}\tん{any character}", "n{composition-separator}\tん", "na\tな"])
+    let lines = try RomajiTableImporter.convert(googleTSV: "n\tん\nna\tな\nnya\tにゃ").split(separator: "\n")
+    #expect(lines.contains("nb\tんb"))
+    #expect(lines.contains("n{composition-separator}\tん"))
+    #expect(!lines.contains("na\tんa"))
+    #expect(!lines.contains("ny\tんy"))
+    #expect(!lines.contains { $0.contains("{any character}") })
 }

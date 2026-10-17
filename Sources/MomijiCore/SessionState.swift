@@ -23,6 +23,10 @@ public struct SessionState: Equatable, Sendable {
     public var suggestions: [String] = []
 
     public init() {}
+
+    public static func needsClientUpdate(from before: SessionState, to after: SessionState) -> Bool {
+        !(before.marked.isEmpty && after.marked.isEmpty)
+    }
 }
 
 public struct SessionOptions: Equatable, Sendable {

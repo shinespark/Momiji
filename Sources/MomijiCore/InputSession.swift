@@ -5,6 +5,7 @@ public final class InputSession {
         var windowVisible = false
         var override: String?
         var segmentLength: Int
+        var restText = ""
     }
 
     private let backend: any ConversionBackend
@@ -175,6 +176,9 @@ public final class InputSession {
         backend.moveCursor(by: length)
         current.segmentLength = length
         current.candidates = segmentCandidates()
+        current.restText = backend.bestConversion(ofReadingFrom: length)
+        backend.moveCursorToStart()
+        backend.moveCursor(by: length)
         current.selected = 0
         current.override = nil
         conversion = current
@@ -235,15 +239,7 @@ public final class InputSession {
             text += candidate.text
             backend.commit(candidate)
         }
-        while !backend.reading.isEmpty {
-            backend.moveCursorToEnd()
-            guard let best = backend.candidates().first(where: { $0.readingCount > 0 }) else {
-                text += backend.reading
-                break
-            }
-            text += best.text
-            backend.commit(best)
-        }
+        text += current.restText
         backend.reset()
         return text
     }
@@ -261,9 +257,8 @@ public final class InputSession {
         if let current = conversion {
             let focused = current.override ?? (current.candidates.indices.contains(current.selected) ? current.candidates[current.selected].text : "")
             next.marked = [MarkedSegment(text: focused, isFocused: true)]
-            let rest = String(backend.reading.dropFirst(current.segmentLength))
-            if !rest.isEmpty {
-                next.marked.append(MarkedSegment(text: rest, isFocused: false))
+            if !current.restText.isEmpty {
+                next.marked.append(MarkedSegment(text: current.restText, isFocused: false))
             }
             if current.windowVisible {
                 next.candidateWindow = windowModel(current)

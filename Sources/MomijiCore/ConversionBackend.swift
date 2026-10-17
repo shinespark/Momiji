@@ -22,6 +22,7 @@ public protocol ConversionBackend: AnyObject {
     func moveCursorToEnd()
     func reset()
     func candidates() -> [ConversionCandidate]
+    func bestConversion(ofReadingFrom offset: Int) -> String
     func predictions(useZenzai: Bool) -> [ConversionCandidate]
     func commit(_ candidate: ConversionCandidate)
     func prepareForConversion()

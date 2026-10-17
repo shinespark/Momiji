@@ -26,6 +26,7 @@ public enum Keymap {
     private static let characterForms: [(KeyInput.Key, KeyInput.Modifiers, KeyAction)] = [
         (.character(";"), .control, .display(.halfWidth)),
         (.character(":"), .control, .display(.halfAlphanumeric)),
+        (.character(":"), [.control, .shift], .display(.halfAlphanumeric)),
         (.character("'"), .control, .display(.halfAlphanumeric)),
         (.character("j"), .control, .display(.hiragana)),
         (.character("k"), .control, .display(.fullKatakana)),

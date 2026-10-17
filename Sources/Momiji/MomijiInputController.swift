@@ -13,20 +13,26 @@ final class MomijiInputController: IMKInputController {
             return false
         }
         currentClient = client
+        let before = engine.session.state
         let result = engine.session.handle(input)
         if let text = result.commitText, !text.isEmpty {
             client.insertText(text, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
         }
-        render(client: client)
+        if SessionState.needsClientUpdate(from: before, to: engine.session.state) {
+            render(client: client)
+        }
         return result.handled
     }
 
     override func commitComposition(_ sender: Any!) {
         guard let client = sender as? (any IMKTextInput & NSObjectProtocol) else { return }
+        let before = engine.session.state
         if let text = engine.session.commitAll(), !text.isEmpty {
             client.insertText(text, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
         }
-        render(client: client)
+        if SessionState.needsClientUpdate(from: before, to: engine.session.state) {
+            render(client: client)
+        }
     }
 
     override func deactivateServer(_ sender: Any!) {

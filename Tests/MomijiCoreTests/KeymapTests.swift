@@ -33,3 +33,7 @@ import Testing
 @Test func makeSpecialKeys() {
     #expect(KeyInput.make(keyCode: 49, charactersIgnoringModifiers: " ", modifiers: [])?.key == .space)
 }
+
+@Test func ctrlColonWithShift() {
+    #expect(Keymap.action(for: .init(key: .character(":"), modifiers: [.control, .shift]), mode: .composition) == .display(.halfAlphanumeric))
+}

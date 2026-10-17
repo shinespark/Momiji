@@ -223,3 +223,37 @@ func suggestingSession(enabled: Bool = true) -> InputSession {
     press(.down, into: session)
     #expect(session.state.candidateWindow == nil)
 }
+
+@Test func passThroughKeyDoesNotTouchClient() {
+    let (session, _) = makeSession()
+    let before = session.state
+    press(.right, .shift, into: session)
+    #expect(!SessionState.needsClientUpdate(from: before, to: session.state))
+}
+
+@Test func clearingMarkedTextUpdatesClient() {
+    let (session, _) = makeSession()
+    type("か", into: session)
+    let before = session.state
+    press(.escape, into: session)
+    #expect(SessionState.needsClientUpdate(from: before, to: session.state))
+}
+
+@Test func restOfReadingIsShownConverted() {
+    let (session, _) = makeSession(kanjiDictionary)
+    type("かんじへんかん", into: session)
+    press(.space, into: session)
+    for _ in 0..<4 { press(.left, .shift, into: session) }
+    #expect(session.state.marked == [MarkedSegment(text: "漢字", isFocused: true), MarkedSegment(text: "変換", isFocused: false)])
+}
+
+@Test func commitMatchesDisplayedText() {
+    let (session, _) = makeSession(kanjiDictionary)
+    type("かんじへんかん", into: session)
+    press(.space, into: session)
+    for _ in 0..<4 { press(.left, .shift, into: session) }
+    press(.character("x"), .option, into: session)
+    let shown = session.state.marked.map(\.text).joined()
+    #expect(shown == "カンジ変換")
+    #expect(press(.enter, into: session).commitText == shown)
+}

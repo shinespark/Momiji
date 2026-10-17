@@ -46,6 +46,11 @@ final class FakeBackend: ConversionBackend {
         return texts.enumerated().map { ConversionCandidate(text: $1, readingCount: prefix.count, id: $0) }
     }
 
+    func bestConversion(ofReadingFrom offset: Int) -> String {
+        let rest = String(reading.dropFirst(offset))
+        return dictionary[rest]?.first ?? rest
+    }
+
     func predictions(useZenzai: Bool) -> [ConversionCandidate] {
         predictionTexts.enumerated().map { ConversionCandidate(text: $1, readingCount: reading.count, id: $0) }
     }

@@ -91,8 +91,18 @@ public final class AzooKeyBackend: ConversionBackend {
 
     public func candidates() -> [ConversionCandidate] {
         guard !composingText.isEmpty else { return [] }
-        let result = converter.requestCandidates(composingText, options: options(prediction: false, useZenzai: true))
+        let result = converter.requestCandidates(composingText.prefixToCursorPosition(), options: options(prediction: false, useZenzai: true))
         return store(result.mainResults)
+    }
+
+    public func bestConversion(ofReadingFrom offset: Int) -> String {
+        var rest = composingText
+        _ = rest.moveCursorFromCursorPosition(count: offset - rest.convertTargetCursorPosition)
+        rest.deleteBackwardFromCursorPosition(count: offset)
+        _ = rest.moveCursorFromCursorPosition(count: rest.convertTarget.count - rest.convertTargetCursorPosition)
+        guard !rest.isEmpty else { return "" }
+        let results = converter.requestCandidates(rest, options: options(prediction: false, useZenzai: true)).mainResults
+        return results.first?.text ?? rest.convertTarget
     }
 
     public func predictions(useZenzai: Bool) -> [ConversionCandidate] {

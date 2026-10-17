@@ -30,7 +30,10 @@ public enum RomajiTableImporter {
             let input = escape(rule.input)
             let isPrefixOfAnother = !rule.waitsForNext && inputs.contains { $0.count > rule.input.count && $0.hasPrefix(rule.input) }
             if isPrefixOfAnother {
-                rows.append("\(input){any character}\t\(rule.output){any character}")
+                for next in followingCharacters where !inputs.contains(where: { $0.hasPrefix(rule.input + String(next)) }) {
+                    let nextText = escape(Substring(String(next)))
+                    rows.append("\(input)\(nextText)\t\(rule.output)\(nextText)")
+                }
                 rows.append("\(input){composition-separator}\t\(rule.output)")
             } else {
                 rows.append("\(input)\t\(rule.output)")
@@ -38,6 +41,8 @@ public enum RomajiTableImporter {
         }
         return rows.joined(separator: "\n")
     }
+
+    private static let followingCharacters: [Character] = (0x21...0x7E).compactMap { Unicode.Scalar($0).map(Character.init) }
 
     private static func escape(_ text: Substring) -> String {
         var result = ""

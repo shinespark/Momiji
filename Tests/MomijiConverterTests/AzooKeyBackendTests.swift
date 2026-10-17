@@ -81,4 +81,42 @@ private func backend(table: String?) -> AzooKeyBackend {
         b.commit(prediction)
         #expect(b.reading.isEmpty)
     }
+
+    @Test func nyaInDvorakTable() {
+        let b = backend(table: dvorakFixture)
+        b.insert("nya")
+        #expect(b.reading == "にゃ")
+    }
+
+    @Test func nhuInDvorakTable() {
+        let b = backend(table: dvorakFixture)
+        b.insert("nhu")
+        #expect(b.reading == "にゅ")
+    }
+
+    @Test func nBeforeConsonantInDvorakTable() {
+        let b = backend(table: dvorakFixture)
+        b.insert("nba")
+        #expect(b.reading == "んば")
+    }
+
+    @Test func candidatesStayWithinCursorWithoutZenzai() {
+        let b = backend(table: nil)
+        b.insert("kanjihenkan")
+        b.prepareForConversion()
+        b.moveCursorToStart()
+        b.moveCursor(by: 6)
+        let candidates = b.candidates()
+        #expect(!candidates.isEmpty)
+        #expect(candidates.allSatisfy { $0.readingCount <= 6 })
+        #expect(candidates.contains { $0.readingCount == 6 })
+    }
+
+    @Test func bestConversionOfRest() {
+        let b = backend(table: nil)
+        b.insert("kanjihenkan")
+        b.prepareForConversion()
+        #expect(b.bestConversion(ofReadingFrom: 3) == "変換")
+        #expect(b.reading == "かんじへんかん")
+    }
 }
