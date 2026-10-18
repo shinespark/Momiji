@@ -112,6 +112,32 @@ private func backend(table: String?) -> AzooKeyBackend {
         #expect(candidates.contains { $0.readingCount == 6 })
     }
 
+    @Test(arguments: [("?", "？"), ("!", "！"), ("-", "ー"), (",", "、"), (".", "。"), ("/", "・"), ("[", "「"), ("]", "」"), ("~", "〜")])
+    func symbolsInDefaultTable(input: String, reading: String) {
+        let b = backend(table: nil)
+        b.insert(input)
+        #expect(b.reading == reading)
+    }
+
+    @Test func symbolAfterNInDefaultTable() {
+        let b = backend(table: nil)
+        b.insert("n?")
+        #expect(b.reading == "ん？")
+    }
+
+    @Test func romanInputKeepsSymbolsInDefaultTable() {
+        let b = backend(table: nil)
+        b.insert("e-mail?")
+        #expect(b.romanInput == "e-mail?")
+    }
+
+    @Test(arguments: [("?", "？"), ("n-", "んー"), (";a", "；あ")])
+    func symbolsInDvorakTable(input: String, reading: String) {
+        let b = backend(table: dvorakFixture)
+        b.insert(input)
+        #expect(b.reading == reading)
+    }
+
     @Test func bestConversionOfRest() {
         let b = backend(table: nil)
         b.insert("kanjihenkan")

@@ -24,7 +24,17 @@ public enum RomajiTableImporter {
         if rules.isEmpty {
             throw .empty
         }
+        let defined = Set(rules.map(\.input))
+        for symbol in SymbolRules.symbols where !defined.contains(Substring(String(symbol))) {
+            if let output = SymbolRules.output(for: symbol) {
+                rules.append((Substring(String(symbol)), escape(Substring(output)), false))
+            }
+        }
         let inputs = rules.map(\.input)
+        var completedOutputs: [Character: String] = [:]
+        for rule in rules where rule.input.count == 1 && !rule.waitsForNext && !inputs.contains(where: { $0.count > 1 && $0.hasPrefix(rule.input) }) {
+            completedOutputs[rule.input.first!] = rule.output
+        }
         var rows: [String] = []
         for rule in rules {
             let input = escape(rule.input)
@@ -32,7 +42,7 @@ public enum RomajiTableImporter {
             if isPrefixOfAnother {
                 for next in followingCharacters where !inputs.contains(where: { $0.hasPrefix(rule.input + String(next)) }) {
                     let nextText = escape(Substring(String(next)))
-                    rows.append("\(input)\(nextText)\t\(rule.output)\(nextText)")
+                    rows.append("\(input)\(nextText)\t\(rule.output)\(completedOutputs[next] ?? nextText)")
                 }
                 rows.append("\(input){composition-separator}\t\(rule.output)")
             } else {
