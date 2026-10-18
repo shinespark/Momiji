@@ -2,20 +2,52 @@ import Foundation
 import Testing
 @testable import MomijiCore
 
+private func rows(_ googleTSV: String) throws -> [Substring] {
+    try RomajiTableImporter.convert(googleTSV: googleTSV).split(separator: "\n")
+}
+
 @Test func twoColumns() throws {
-    #expect(try RomajiTableImporter.convert(googleTSV: "ka\tか\n") == "ka\tか")
+    #expect(try rows("ka\tか\n").first == "ka\tか")
 }
 
 @Test func threeColumnsAppendNext() throws {
-    #expect(try RomajiTableImporter.convert(googleTSV: "kk\tっ\tk") == "kk\tっk")
+    #expect(try rows("kk\tっ\tk").first == "kk\tっk")
 }
 
 @Test func escapesBraces() throws {
-    #expect(try RomajiTableImporter.convert(googleTSV: ";[\t{") == ";[\t{lbracket}")
+    #expect(try rows(";[\t{").first == ";[\t{lbracket}")
 }
 
 @Test func skipsBlankLines() throws {
-    #expect(try RomajiTableImporter.convert(googleTSV: "a\tあ\n\n\ni\tい") == "a\tあ\ni\tい")
+    #expect(try rows("a\tあ\n\n\ni\tい").prefix(2) == ["a\tあ", "i\tい"])
+}
+
+@Test func addsSymbolsMissingFromTable() throws {
+    let lines = try rows("a\tあ")
+    #expect(lines.contains("?\t？"))
+    #expect(lines.contains("!\t！"))
+    #expect(lines.contains("/\t・"))
+    #expect(lines.contains("-\tー"))
+    #expect(lines.contains("{lbracket}\t｛"))
+}
+
+@Test func keepsSymbolsDefinedInTable() throws {
+    let lines = try rows("-\t－")
+    #expect(lines.contains("-\t－"))
+    #expect(!lines.contains("-\tー"))
+}
+
+@Test func symbolAfterPrefixIsConverted() throws {
+    let lines = try rows("n\tん\nna\tな")
+    #expect(lines.contains("n-\tんー"))
+    #expect(lines.contains("n?\tん？"))
+}
+
+@Test func symbolUsedAsPrefixFallsBackToFullWidth() throws {
+    let lines = try rows(";h\t←")
+    #expect(lines.contains(";h\t←"))
+    #expect(lines.contains(";a\t；a"))
+    #expect(lines.contains(";{composition-separator}\t；"))
 }
 
 @Test func invalidLine() {

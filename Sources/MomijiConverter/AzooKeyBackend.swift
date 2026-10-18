@@ -53,13 +53,22 @@ public final class AzooKeyBackend: ConversionBackend {
 
     public var romanInput: String {
         String(composingText.input.compactMap { element in
-            if case .character(let character) = element.piece { character } else { nil }
+            guard case .character(let character) = element.piece else { return nil }
+            if case .roman2kana = element.inputStyle {
+                return SymbolRules.symbol(for: character) ?? character
+            }
+            return character
         })
     }
 
     public var cursor: Int { composingText.convertTargetCursorPosition }
 
     public func insert(_ text: String) {
+        let text = if case .roman2kana = inputStyle {
+            text.map { SymbolRules.output(for: $0) ?? String($0) }.joined()
+        } else {
+            text
+        }
         composingText.insertAtCursorPosition(text, inputStyle: inputStyle)
     }
 

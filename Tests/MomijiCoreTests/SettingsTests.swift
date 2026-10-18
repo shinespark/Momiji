@@ -43,7 +43,7 @@ private func writeFile(_ text: String, name: String = "table.tsv") -> URL {
     let source = writeFile("ka\tか", name: "dvorak_jp.tsv")
     #expect(try store.importTable(from: source) == "dvorak_jp.tsv")
     try FileManager.default.removeItem(at: source)
-    #expect(store.loadAzooKeyTSV() == "ka\tか")
+    #expect(store.loadAzooKeyTSV()?.hasPrefix("ka\tか\n") == true)
 }
 
 @Test func failedImportKeepsOld() throws {
@@ -52,7 +52,7 @@ private func writeFile(_ text: String, name: String = "table.tsv") -> URL {
     #expect(throws: RomajiTableImportError.invalidLine(lineNumber: 1)) {
         try store.importTable(from: writeFile("bad"))
     }
-    #expect(store.loadAzooKeyTSV() == "ka\tか")
+    #expect(store.loadAzooKeyTSV()?.hasPrefix("ka\tか\n") == true)
 }
 
 @Test func resetRemovesTable() throws {
