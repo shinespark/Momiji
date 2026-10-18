@@ -13,6 +13,7 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/zenzai" "$app/Contents/F
 cp "$bin/Momiji" "$app/Contents/MacOS/Momiji"
 cp Resources/Info.plist "$app/Contents/Info.plist"
 cp Resources/main.tiff "$app/Contents/Resources/main.tiff"
+cp -R Resources/*.lproj "$app/Contents/Resources/"
 cp Resources/zenzai/ggml-model-Q5_K_M.gguf "$app/Contents/Resources/zenzai/"
 for bundle in "$bin"/*.bundle; do
     cp -R "$bundle" "$app/Contents/Resources/"
